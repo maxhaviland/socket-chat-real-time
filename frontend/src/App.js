@@ -1,9 +1,11 @@
 import React from 'react';
 import Chat from './components/Chat/index';
+import GlobalStyle, { Title } from './styled';
 
 export default () => (
   <>
-    <h2>Real time chat</h2>
+    <Title>Chat</Title>
     <Chat/>
+    <GlobalStyle/>
   </>
 )
