@@ -1,20 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
+
 import io from 'socket.io-client';
+import uuid from 'uuid/dist/v4'
 import { format } from 'date-fns';
-import styles from './styled';
+
+import TextArea from './styled';
 import MessageBox from '../MessageBox';
+
 import notification from '../../assets/notification.mp3';
 
 const socket = io('http://localhost:8080');
-const Notification = new Audio(notification);
-
 socket.on('connect', () => console.log('socket connected successfully'));
 
-const id = Math.random()+Date.now()
+const userId = uuid();
+const Notification = new Audio(notification);
 
 export default () => {
   const message = useRef();
-  const getDate = ()  => format(Date.now(), 'dd/MM/yyyy HH:mm')
+
+  const getDate = ()  => format(Date.now(), `dd/MM/yyyy 'at' HH:mm`)
+
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
@@ -22,10 +27,10 @@ export default () => {
 
     socket.on('message', updateMessages);
 
-    if (messages[messages.length - 1]?.id !== id) Notification.play();
+    const notifyUser = messages[messages.length - 1]?.userId !== userId
+    if (notifyUser) Notification.play();
 
     return () => socket.off('message', updateMessages)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages])
 
   const sendMessage = (e) => {
@@ -34,22 +39,21 @@ export default () => {
       let textMessage = message.current.value.replace(/\n+/, '');
       if (!textMessage.trim()) return;
       const data = { 
-        id, 
+        userId,
+        id: Math.random(), 
         message: textMessage,
         date: getDate(),
         name: 'Anonymous',
       }
-
       socket.emit('message', data);
       message.current.value = '';
     }
-
   }
 
   return (
     <>
-      <MessageBox scrollLength={messages.length} mySelf={id} data={messages}/>
-      <textarea onKeyPress={sendMessage} placeholder="...write" style={styles.textArea} ref={message} />
+      <MessageBox userId={userId} messages={messages}/>
+      <TextArea onKeyPress={sendMessage} placeholder="write... (press enter to send a message)" ref={message} />
     </>
   );
 }
